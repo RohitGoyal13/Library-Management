@@ -22,19 +22,12 @@ class SecurityConfig(
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }  // 🔥 IMPORTANT
 
             .authorizeHttpRequests {
-
             it.requestMatchers("/auth/**", "/actuator/**").permitAll()
 
-            // Admin access
-            it.requestMatchers("/books/**").hasRole("ADMIN")
-
-            // User return must come FIRST
             it.requestMatchers("/borrow/return/**").hasRole("USER")
 
-            // All borrow endpoints
+            it.requestMatchers("/books/**").hasRole("ADMIN")
             it.requestMatchers("/borrow/**").hasRole("USER")
-
-            // Everything else
             it.anyRequest().authenticated()
         }
 
