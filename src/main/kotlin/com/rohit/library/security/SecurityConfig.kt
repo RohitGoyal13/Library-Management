@@ -3,37 +3,47 @@ package com.rohit.library.security
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
+import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.web.SecurityFilterChain
-import org.springframework.security.core.userdetails.User
-import org.springframework.security.core.userdetails.UserDetailsService
-import org.springframework.security.provisioning.InMemoryUserDetailsManager
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 
 @Configuration
-class SecurityConfig {
+@EnableWebSecurity
+class SecurityConfig(
+    private val jwtFilter: JwtAuthenticationFilter
+) {
 
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
+
         http
             .csrf { it.disable() }
+            .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }  // 🔥 IMPORTANT
+
             .authorizeHttpRequests {
-                // ALLOW Auth and Actuator endpoints
-                it.requestMatchers("/auth/**", "/actuator/**").permitAll()
-                // LOCK everything else
-                it.anyRequest().authenticated()
-            }
+
+            it.requestMatchers("/auth/**", "/actuator/**").permitAll()
+
+            // Admin access
+            it.requestMatchers("/books/**").hasRole("ADMIN")
+
+            // User return must come FIRST
+            it.requestMatchers("/borrow/return/**").hasRole("USER")
+
+            // All borrow endpoints
+            it.requestMatchers("/borrow/**").hasRole("USER")
+
+            // Everything else
+            it.anyRequest().authenticated()
+        }
+
+
             .httpBasic { it.disable() }
             .formLogin { it.disable() }
 
-        return http.build()
-    }
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter::class.java)
 
-    //  THIS BEAN REMOVES THE "GENERATED PASSWORD" LOG
-    @Bean
-    fun userDetailsService(): UserDetailsService {
-        val user = User.withUsername("admin")
-            .password("{noop}password") // {noop} means plain text for testing
-            .roles("USER")
-            .build()
-        return InMemoryUserDetailsManager(user)
+        return http.build()
     }
 }

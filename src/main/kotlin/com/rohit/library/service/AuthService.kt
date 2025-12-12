@@ -14,22 +14,35 @@ class AuthService(
     private val passwordEncoder: PasswordEncoder,
     private val jwtUtil: JwtUtil
 ) {
-    fun signup(request: AuthRequest): AuthResponse {
+
+    fun signup(request: AuthRequest, role: String = "USER"): AuthResponse {
         if (userRepository.findByUsername(request.username) != null) {
             throw IllegalArgumentException("User already exists")
         }
+
         val hashed = passwordEncoder.encode(request.password)
-        val saved = userRepository.save(User(username = request.username, password = hashed))
-        val token = jwtUtil.generateToken(saved.username)
+
+        val saved = userRepository.save(
+            User(
+                username = request.username,
+                password = hashed,
+                role = role.uppercase()   // store USER / ADMIN
+            )
+        )
+
+        val token = jwtUtil.generateToken(saved.username, saved.role)
         return AuthResponse(token)
     }
 
     fun login(request: AuthRequest): AuthResponse {
-        val user = userRepository.findByUsername(request.username) ?: throw IllegalArgumentException("Invalid credentials")
+        val user = userRepository.findByUsername(request.username)
+            ?: throw IllegalArgumentException("Invalid credentials")
+
         if (!passwordEncoder.matches(request.password, user.password)) {
             throw IllegalArgumentException("Invalid credentials")
         }
-        val token = jwtUtil.generateToken(user.username)
+
+        val token = jwtUtil.generateToken(user.username, user.role)
         return AuthResponse(token)
     }
 }
