@@ -42,15 +42,22 @@ class BorrowService(
         // val expiresAt = LocalDateTime.now().plusDays(7)
         // val policyReturnAt = LocalDateTime.now().withHour(22).withMinute(0)
 
-        val borrowRecord = BorrowRecord(
+                val borrowRecord = BorrowRecord(
             userId = user.id!!,
             bookId = bookId,
             borrowedAt = LocalDateTime.now(),
-            expiresAt = null,        // will add later
-            policyReturnAt = null,   // will add later
+
+            // Add expiry (optional)
+            expiresAt = LocalDateTime.now().plusDays(7),
+
+            // Add 10PM policy (optional)
+            policyReturnAt = LocalDateTime.now()
+                .withHour(22)
+                .withMinute(0)
+                .withSecond(0),
+
             returned = false
         )
-
         return borrowRepository.save(borrowRecord)
     }
 
