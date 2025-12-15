@@ -335,9 +335,9 @@ docker-compose up --build
 **Rohit Goyal**  
 Final Year CSE, IIIT Nagpur
 
-📧 Email: rohit.goyal@example.com  
-🔗 LinkedIn: [linkedin.com/in/rohitgoyal](https://linkedin.com/in/rohitgoyal)  
-🐙 GitHub: [@rohitgoyal](https://github.com/rohitgoyal)
+📧 Email: rohitgoyal4220@gmail.com  
+🔗 LinkedIn: [linkedin.com/in/rohitgoyal](https://www.linkedin.com/in/rohit-goyal-722699263/)  
+🐙 GitHub: [@rohitgoyal](https://github.com/rohitgoyal13)
 
 ---
 
