@@ -1,235 +1,95 @@
-# 📚 Library Management System (Spring Boot + Kotlin)
+# 📚 Library Management System
 
-A **production-ready Library Management System** built using **Spring Boot (Kotlin)** with **MongoDB**, **JWT-based authentication**, **Role-based security**, **gRPC communication**, and **Dockerized deployment**.
+A production-ready **Library Management System** built with **Spring Boot + Kotlin**, featuring **JWT Authentication**, **MongoDB**, **gRPC**, and **Docker**.
 
 ---
 
 ## 🚀 Tech Stack
 
-### Backend
-- **Spring Boot 3.5.x**
-- **Kotlin (JVM)**
-- **MongoDB**
-- **Spring Security**
-- **JWT Authentication (jjwt)**
-
-### Communication
-- **gRPC (Java-based stubs)**
-- **Protocol Buffers**
-
-### DevOps
-- **Docker**
-- **Docker Compose**
-- **Gradle (Kotlin DSL)**
-
----
-
-## 🧱 Architecture Overview
-
-```
-library-management
-├── controller        # REST APIs
-├── grpc              # gRPC services
-├── service           # Business logic
-├── repository        # MongoDB repositories
-├── security          # JWT, filters, security config
-├── model             # Domain models
-├── proto             # gRPC .proto definitions
-└── config            # App & security configs
-```
-
-### Core Features
-- **REST APIs** for client-facing operations
-- **gRPC** for internal/service-to-service communication
+- **Spring Boot 3.5.x** (Kotlin)
+- **MongoDB** with authentication
 - **JWT** for stateless authentication
-- **Role-based access control** (`ADMIN`, `USER`)
+- **gRPC** for service communication
+- **Docker & Docker Compose**
+- **Gradle** (Kotlin DSL)
 
 ---
 
-## 🔐 Authentication & Authorization
+## ⚡ Quick Start
 
-### JWT-based Authentication
-- **Stateless security** (no server session)
-- Token contains:
-  - `username`
-  - `role`
-  - `expiration`
-- Spring Security filter validates JWT on every request
+### Prerequisites
+- Docker & Docker Compose installed
+- Git
 
-### Security Flow
-```
-1. User logs in with credentials
-2. Server validates & generates JWT
-3. Client stores JWT (localStorage/cookie)
-4. Client sends JWT in Authorization header
-5. JwtAuthenticationFilter validates token
-6. Request proceeds to controller
+### 1️⃣ Clone the Repository
+```bash
+git clone https://github.com/yourusername/library-management.git
+cd library-management
 ```
 
-### Roles & Permissions
+### 2️⃣ Build the Application
+```bash
+./gradlew clean build
+```
 
-| Role  | Permissions |
-|-------|-------------|
-| **ADMIN** | Manage books, users, view all borrows, approve/reject requests |
-| **USER**  | View books, borrow/return own books, view own history |
+### 3️⃣ Run with Docker
+```bash
+docker-compose up --build
+```
 
-### Security Configuration
-- Password encryption using **BCrypt**
-- CORS enabled for cross-origin requests
-- CSRF disabled (stateless JWT approach)
-- H2 console and health endpoints publicly accessible
+The application will start on:
+- **REST API:** http://localhost:8080
+- **MongoDB:** localhost:27017
+- **Health Check:** http://localhost:8080/actuator/health
+
+### 4️⃣ Test the APIs
+Import the Postman collection from `postman_collection/Library Management App.postman_collection.json`
 
 ---
 
-## 🔁 gRPC Integration
+## 🔐 Authentication Flow
 
-### Why gRPC?
-- **High-performance** binary protocol
-- **Type-safe** service definitions
-- **Bi-directional streaming** support
-- **Language-agnostic** (polyglot microservices)
-
-### Implementation Details
-- gRPC server integrated using `grpc-server-spring-boot-starter`
-- Java-based gRPC stubs (stable & production-safe)
-- Protocol Buffers for schema definition
-- Running on port **9090**
-
-### Available gRPC Services
-
-#### LibraryService
-```protobuf
-service LibraryService {
-  rpc Ping(PingRequest) returns (PingResponse);
-  rpc GetBookById(BookRequest) returns (BookResponse);
-  rpc ListAllBooks(Empty) returns (BookListResponse);
-}
-```
-
-#### Example: Health Check
-```kotlin
-override fun ping(request: PingRequest, responseObserver: StreamObserver<PingResponse>) {
-    val response = PingResponse.newBuilder()
-        .setMessage("Library Service is running!")
-        .build()
-    responseObserver.onNext(response)
-    responseObserver.onCompleted()
-}
-```
+1. **Signup** - Create a new user (ADMIN or USER role)
+2. **Login** - Get JWT token
+3. **Use Token** - Add `Authorization: Bearer <token>` header for protected endpoints
 
 ---
 
-## 🗄️ Database
+## 📡 API Endpoints
 
-### MongoDB Schema Design
+### Authentication
 
-#### User Collection
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/auth/signup?role=ADMIN` | Register admin user |
+| POST | `/auth/signup?role=USER` | Register regular user |
+| POST | `/auth/login` | Login and get JWT token |
+
+**Signup/Login Request Body:**
 ```json
-{
-  "_id": "ObjectId",
-  "username": "string",
-  "password": "string (BCrypt hashed)",
-  "role": "ADMIN | USER",
-  "email": "string",
-  "createdAt": "timestamp"
-}
-```
-
-#### Book Collection
-```json
-{
-  "_id": "ObjectId",
-  "title": "string",
-  "author": "string",
-  "isbn": "string",
-  "totalCopies": "number",
-  "availableCopies": "number",
-  "category": "string",
-  "publishedYear": "number"
-}
-```
-
-#### BorrowRecord Collection
-```json
-{
-  "_id": "ObjectId",
-  "userId": "string",
-  "bookId": "string",
-  "borrowDate": "timestamp",
-  "dueDate": "timestamp",
-  "returnDate": "timestamp | null",
-  "status": "BORROWED | RETURNED | OVERDUE"
-}
-```
-
-### Repository Layer
-- Spring Data MongoDB repositories
-- Custom queries using `@Query` annotations
-- Pagination & sorting support
-- Transaction support for critical operations
-
----
-
-## 📡 REST API Endpoints
-
-### Authentication Endpoints
-
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| POST | `/auth/signup?role=ADMIN` | Register new admin user | No |
-| POST | `/auth/signup?role=USER` | Register new regular user | No |
-| POST | `/auth/login` | Login and get JWT | No |
-
-#### Example: Signup Request
-```json
-POST /auth/signup?role=ADMIN
-Content-Type: application/json
-
 {
   "username": "arunkumar",
   "password": "987654"
 }
 ```
 
-**Response (200 OK):**
+**Response:**
 ```json
 {
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ..."
-}
-```
-
-#### Example: Login Request
-```json
-POST /auth/login
-Content-Type: application/json
-
-{
-  "username": "arunkumar",
-  "password": "987654"
-}
-```
-
-**Response (200 OK):**
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ..."
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
 
 ---
 
-### Book Management Endpoints
+### Book Management
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| POST | `/books` | Add a new book | Yes (Bearer Token) |
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/books` | Add a new book | Required |
 
-#### Example: Add Book Request
+**Request Body:**
 ```json
-POST /books
-Authorization: Bearer <jwt_token>
-Content-Type: application/json
-
 {
   "title": "Ozymandious Latest Edison 2025 Part-3 Chapter-1",
   "author": "Rohit Goyal",
@@ -237,7 +97,7 @@ Content-Type: application/json
 }
 ```
 
-**Response (200 OK):**
+**Response:**
 ```json
 {
   "id": "693fdb1652ce736c03d328c1",
@@ -249,21 +109,15 @@ Content-Type: application/json
 
 ---
 
-### Borrow & Return Endpoints
+### Borrow & Return
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| POST | `/borrow/{bookId}` | Borrow a book | Yes (Bearer Token) |
-| POST | `/borrow/return/{borrowId}` | Return a borrowed book | Yes (Bearer Token) |
-| GET | `/borrow/my` | Get user's borrowed books | Yes (Bearer Token) |
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/borrow/{bookId}` | Borrow a book | Required |
+| POST | `/borrow/return/{borrowId}` | Return a book | Required |
+| GET | `/borrow/my` | Get my borrowed books | Required |
 
-#### Example: Borrow Book Request
-```json
-POST /borrow/693fdb1652ce736c03d328c1
-Authorization: Bearer JhyHcEVC6Exa9umbQc3RGfINJvtlQ4
-```
-
-**Response (200 OK):**
+**Borrow Response:**
 ```json
 {
   "id": "693fdb2525ce736c03d328c3",
@@ -277,360 +131,15 @@ Authorization: Bearer JhyHcEVC6Exa9umbQc3RGfINJvtlQ4
 }
 ```
 
-#### Example: Return Book Request
-```json
-POST /borrow/return/693fdb2525ce736c03d328c3
-Authorization: Bearer JhyHcEVC6Exa9umbQc3RGfINJvtlQ4
-```
-
-**Response (200 OK):**
-```json
-{
-  "id": "693fdb2525ce736c03d328c3",
-  "userId": "693fdb2752ce736c03d328c2",
-  "bookId": "693fdb1652ce736c03d328c1",
-  "borrowedAt": "2025-12-15T09:56:34.719",
-  "expiresAt": "2025-12-22T09:56:34.719",
-  "policyReturnAt": "2025-12-15T22:00:00.719",
-  "returned": true,
-  "returnedAt": "2025-12-15T09:57:46.530913577"
-}
-```
-
-#### Example: Get My Borrowed Books
-```json
-GET /borrow/my
-Authorization: Bearer JhyHcEVC6Exa9umbQc3RGfINJvtlQ4
-```
-
-**Response (200 OK):**
-```json
-[
-  {
-    "id": "693fdb2525ce736c03d328c3",
-    "userId": "693fdb2752ce736c03d328c2",
-    "bookId": "693fdb1652ce736c03d328c1",
-    "borrowedAt": "2025-12-15T09:56:34.719",
-    "expiresAt": "2025-12-22T09:56:34.719",
-    "policyReturnAt": "2025-12-15T22:00:00.719",
-    "returned": true,
-    "returnedAt": "2025-12-15T09:57:46.53"
-  }
-]
-```
-
 ---
 
-## 🐳 Docker Setup
+### Health Check
 
-### Docker Compose Configuration
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/actuator/health` | Application health status |
 
-```yaml
-version: '3.8'
-
-services:
-  lm_mongo:
-    image: mongo:7.0
-    container_name: lm_mongo
-    environment:
-      MONGO_INITDB_DATABASE: library
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-    networks:
-      - library_network
-
-  lm_app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: lm_app
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-      SPRING_DATA_MONGODB_URI: mongodb://lm_mongo:27017/library
-      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
-    ports:
-      - "8080:8080"
-      - "9090:9090"
-    depends_on:
-      - lm_mongo
-    networks:
-      - library_network
-
-volumes:
-  mongo_data:
-
-networks:
-  library_network:
-    driver: bridge
-```
-
-### Dockerfile
-
-```dockerfile
-FROM gradle:8.5-jdk17 AS build
-WORKDIR /app
-COPY . .
-RUN gradle clean build -x test
-
-FROM eclipse-temurin:17-jre-alpine
-WORKDIR /app
-COPY --from=build /app/build/libs/*.jar app.jar
-EXPOSE 8080 9090
-ENTRYPOINT ["java", "-jar", "app.jar"]
-```
-
-### Running the Application
-
-```bash
-# Start all services
-docker-compose up --build
-
-# Run in detached mode
-docker-compose up -d
-
-# View logs
-docker-compose logs -f lm_app
-
-# Stop services
-docker-compose down
-
-# Stop and remove volumes
-docker-compose down -v
-```
-
----
-
-## ⚙️ Configuration
-
-### Application Profiles
-
-#### application.yml (Default)
-```yaml
-spring:
-  application:
-    name: library-management
-  data:
-    mongodb:
-      uri: mongodb://localhost:27017/library
-      auto-index-creation: true
-
-grpc:
-  server:
-    port: 9090
-
-jwt:
-  secret: ${JWT_SECRET:default-secret-key-change-me}
-  expiration: 86400000 # 24 hours in milliseconds
-
-server:
-  port: 8080
-  error:
-    include-message: always
-```
-
-#### application-docker.yml
-```yaml
-spring:
-  data:
-    mongodb:
-      uri: mongodb://lm_mongo:27017/library
-
-logging:
-  level:
-    org.springframework: INFO
-    com.library: DEBUG
-```
-
-### Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `SPRING_PROFILES_ACTIVE` | Active profile | `default` |
-| `SPRING_DATA_MONGODB_URI` | MongoDB connection string | `mongodb://localhost:27017/library` |
-| `JWT_SECRET` | JWT signing key | (required in production) |
-| `JWT_EXPIRATION` | Token expiration (ms) | `86400000` (24h) |
-| `GRPC_SERVER_PORT` | gRPC server port | `9090` |
-
----
-
-## 🧪 Testing
-
-### Test Structure
-```
-src/test/kotlin
-├── controller     # REST API integration tests
-├── service        # Business logic unit tests
-├── security       # JWT & authentication tests
-└── grpc           # gRPC service tests
-```
-
-### Running Tests
-
-```bash
-# Run all tests
-./gradlew test
-
-# Run specific test class
-./gradlew test --tests LibraryServiceTest
-
-# Run with coverage
-./gradlew test jacocoTestReport
-```
-
-### Example Test Cases
-
-#### Unit Test Example
-```kotlin
-@Test
-fun `should successfully borrow available book`() {
-    val book = Book(
-        id = "1",
-        title = "Test Book",
-        availableCopies = 5
-    )
-    whenever(bookRepository.findById("1")).thenReturn(Optional.of(book))
-    
-    val result = borrowService.borrowBook("1", "user123")
-    
-    assertThat(result.status).isEqualTo(BorrowStatus.BORROWED)
-    verify(bookRepository).save(any())
-}
-```
-
-#### Integration Test Example
-```kotlin
-@Test
-fun `should return 401 when accessing protected endpoint without token`() {
-    mockMvc.perform(get("/api/books"))
-        .andExpect(status().isUnauthorized)
-}
-```
-
----
-
-## 📦 Build & Deployment
-
-### Local Build
-
-```bash
-# Clean build
-./gradlew clean build
-
-# Skip tests
-./gradlew clean build -x test
-
-# Generate JAR
-./gradlew bootJar
-```
-
-### Generated Artifacts
-```
-build/libs/library-management-0.0.1-SNAPSHOT.jar
-```
-
-### Running Locally
-
-```bash
-# Using Gradle
-./gradlew bootRun
-
-# Using JAR
-java -jar build/libs/library-management-0.0.1-SNAPSHOT.jar
-
-# With profile
-java -jar build/libs/library-management-0.0.1-SNAPSHOT.jar --spring.profiles.active=docker
-```
-
----
-
-## 🔌 Service Ports
-
-| Service | Port | Protocol | Description |
-|---------|------|----------|-------------|
-| REST API | 8080 | HTTP | Main REST endpoints |
-| gRPC Server | 9090 | gRPC | Internal service communication |
-| MongoDB | 27017 | TCP | Database |
-| Actuator | 8080/actuator | HTTP | Health & metrics |
-
----
-
-## 🛡️ Production Best Practices Implemented
-
-### Security
-- ✅ JWT-based stateless authentication
-- ✅ BCrypt password hashing
-- ✅ Role-based authorization
-- ✅ CORS configuration
-- ✅ Input validation & sanitization
-- ✅ SQL injection prevention (NoSQL)
-
-### Architecture
-- ✅ Clean layered architecture (Controller → Service → Repository)
-- ✅ Separation of concerns
-- ✅ Dependency injection
-- ✅ Interface-based design
-
-### Performance
-- ✅ Database indexing
-- ✅ Connection pooling
-- ✅ Pagination for large datasets
-- ✅ Efficient query design
-
-### Monitoring
-- ✅ Spring Boot Actuator enabled
-- ✅ Health check endpoints
-- ✅ Structured logging
-- ✅ gRPC health service
-
-### DevOps
-- ✅ Dockerized deployment
-- ✅ Multi-stage Docker builds
-- ✅ Environment-based configuration
-- ✅ Volume persistence
-
-### Code Quality
-- ✅ Kotlin DSL for type-safe builds
-- ✅ Comprehensive error handling
-- ✅ Unit & integration tests
-- ✅ Clean code principles
-
----
-
-## 📈 Future Enhancements
-
-### Short-term
-- [ ] Redis caching layer
-- [ ] API rate limiting
-- [ ] Email notifications
-- [ ] Book reservation system
-- [ ] Advanced search filters
-
-### Mid-term
-- [ ] gRPC client implementation
-- [ ] Kafka event streaming
-- [ ] Elasticsearch integration
-- [ ] GraphQL API
-- [ ] Admin dashboard UI
-
-### Long-term
-- [ ] Microservices architecture
-- [ ] Kubernetes deployment
-- [ ] Service mesh (Istio)
-- [ ] Centralized logging (ELK stack)
-- [ ] Prometheus & Grafana monitoring
-- [ ] CI/CD pipeline (Jenkins/GitHub Actions)
-
----
-
-### Health Check Endpoint
-
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | `/actuator/health` | Check application health | No |
-
-**Response (200 OK):**
+**Response:**
 ```json
 {
   "status": "UP"
@@ -639,75 +148,185 @@ java -jar build/libs/library-management-0.0.1-SNAPSHOT.jar --spring.profiles.act
 
 ---
 
-## 🐛 Troubleshooting
+## 🗄️ Database Schema
 
-### Common Issues
-
-#### MongoDB Connection Failed
-```bash
-# Check if MongoDB is running
-docker ps | grep mongo
-
-# Check logs
-docker logs lm_mongo
-
-# Restart MongoDB
-docker-compose restart lm_mongo
+### User Collection
+```json
+{
+  "id": "693fdb2752ce736c03d328c2",
+  "username": "arunkumar",
+  "password": "$2a$10$hashed_password",
+  "role": "ADMIN"
+}
 ```
 
-#### JWT Token Invalid
-```bash
-# Verify JWT_SECRET is set
-echo $JWT_SECRET
-
-# Generate new secret (Linux/Mac)
-openssl rand -base64 32
-
-# Windows PowerShell
-[Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Maximum 256 }))
+### Book Collection
+```json
+{
+  "id": "693fdb1652ce736c03d328c1",
+  "title": "Ozymandious Latest Edison 2025 Part-3 Chapter-1",
+  "author": "Rohit Goyal",
+  "quantity": 1000
+}
 ```
 
-#### Port Already in Use
-```bash
-# Find process using port 8080
-lsof -i :8080
-
-# Kill process
-kill -9 <PID>
-
-# Or change port in application.yml
-server.port=8081
+### BorrowRecord Collection
+```json
+{
+  "id": "693fdb2525ce736c03d328c3",
+  "userId": "693fdb2752ce736c03d328c2",
+  "bookId": "693fdb1652ce736c03d328c1",
+  "borrowedAt": "2025-12-15T09:56:34.719",
+  "expiresAt": "2025-12-22T09:56:34.719",
+  "policyReturnAt": "2025-12-15T22:00:00.719",
+  "returned": false,
+  "returnedAt": null
+}
 ```
 
 ---
 
-## 📚 API Documentation
+## 🐳 Docker Configuration
 
-All endpoints have been tested and verified using Postman. The actual responses match the examples provided above.
+### Dockerfile
+```dockerfile
+FROM eclipse-temurin:21-jdk
 
----
+WORKDIR /app
 
-## 🤝 Contributing
+COPY build/libs/*.jar app.jar
 
-```bash
-# Fork the repository
-# Create feature branch
-git checkout -b feature/amazing-feature
+EXPOSE 8080
 
-# Commit changes
-git commit -m "Add amazing feature"
+ENTRYPOINT ["java", "-jar", "app.jar"]
+```
 
-# Push to branch
-git push origin feature/amazing-feature
+### docker-compose.yml
+```yaml
+version: "3.8"
 
-# Open Pull Request
+services:
+  mongo:
+    image: mongo:6
+    container_name: lm_mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lm_app
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mongo
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://root:root@mongo:27017/librarydb?authSource=admin
+      SPRING_PROFILES_ACTIVE: docker
+
+volumes:
+  mongo_data:
 ```
 
 ---
 
-## 📝 License
+## 🛠️ Configuration
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### MongoDB Connection
+```yaml
+spring:
+  data:
+    mongodb:
+      uri: mongodb://root:root@mongo:27017/librarydb?authSource=admin
+```
+
+### JWT Configuration
+- Token expiration: **24 hours**
+- Algorithm: **HS256**
+- Secret: Configured via environment variable
+
+---
+
+## 🏗️ Project Structure
+
+```
+library-management/
+├── src/
+│   ├── main/kotlin/
+│   │   ├── controller/    # REST endpoints
+│   │   ├── service/       # Business logic
+│   │   ├── repository/    # MongoDB repositories
+│   │   ├── model/         # Data models
+│   │   ├── security/      # JWT & authentication
+│   │   ├── grpc/          # gRPC services
+│   │   └── config/        # Configuration
+├── build.gradle.kts
+├── Dockerfile
+├── docker-compose.yml
+└── postman_collection/
+```
+
+---
+
+## 🔒 Security Features
+
+- ✅ **JWT-based authentication** (stateless)
+- ✅ **BCrypt password hashing**
+- ✅ **Role-based access control** (ADMIN/USER)
+- ✅ **Secured endpoints** with Bearer tokens
+- ✅ **MongoDB authentication** enabled
+
+---
+
+## 🎯 Key Features
+
+- **JWT Authentication** - Secure stateless authentication
+- **Role Management** - ADMIN and USER roles
+- **Book Management** - Add and manage books
+- **Borrow System** - Track borrowed books with expiry
+- **gRPC Support** - High-performance service communication
+- **Dockerized** - One-command deployment
+- **MongoDB** - Flexible NoSQL database
+- **Health Monitoring** - Spring Boot Actuator
+
+---
+
+## 🔧 Useful Commands
+
+```bash
+# Stop containers
+docker-compose down
+
+# Remove volumes (clean slate)
+docker-compose down -v
+
+# View logs
+docker-compose logs -f app
+
+# Rebuild and restart
+docker-compose up --build
+
+# Build JAR only
+./gradlew bootJar
+```
+
+---
+
+## 📞 Ports
+
+| Service | Port |
+|---------|------|
+| REST API | 8080 |
+| MongoDB | 27017 |
+| gRPC | 9090 |
 
 ---
 
@@ -722,36 +341,16 @@ Final Year CSE, IIIT Nagpur
 
 ---
 
-## ⭐ Acknowledgments
+## 📝 License
 
-- Spring Boot Team for the amazing framework
-- MongoDB for flexible data modeling
-- gRPC community for high-performance RPC
-- Docker for seamless containerization
-
----
-
-## 🎯 Project Status
-
-**Status:** ✅ Production Ready  
-**Version:** 1.0.0  
-**Last Updated:** December 2024
-
----
-
-## 📞 Support
-
-For support and queries:
-- 📧 Email: support@librarymanagement.com
-- 💬 Discord: [Join Server](https://discord.gg/library)
-- 📖 Wiki: [Documentation](https://github.com/rohitgoyal/library-management/wiki)
+MIT License - See [LICENSE](LICENSE) for details
 
 ---
 
 <div align="center">
 
-### ⭐ If you found this project useful, please give it a star!
+**Made with ❤️ using Spring Boot + Kotlin**
 
-**Made with ❤️ by Rohit Goyal**
+⭐ Star this repo if you found it useful!
 
 </div>
