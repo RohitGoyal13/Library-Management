@@ -176,82 +176,148 @@ override fun ping(request: PingRequest, responseObserver: StreamObserver<PingRes
 
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
-| POST | `/api/auth/register` | Register new user | No |
-| POST | `/api/auth/login` | Login and get JWT | No |
-| POST | `/api/auth/refresh` | Refresh JWT token | Yes |
+| POST | `/auth/signup?role=ADMIN` | Register new admin user | No |
+| POST | `/auth/signup?role=USER` | Register new regular user | No |
+| POST | `/auth/login` | Login and get JWT | No |
+
+#### Example: Signup Request
+```json
+POST /auth/signup?role=ADMIN
+Content-Type: application/json
+
+{
+  "username": "arunkumar",
+  "password": "987654"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ..."
+}
+```
 
 #### Example: Login Request
 ```json
-POST /api/auth/login
+POST /auth/login
+Content-Type: application/json
+
 {
-  "username": "john_doe",
-  "password": "password123"
+  "username": "arunkumar",
+  "password": "987654"
 }
 ```
 
-#### Example: Login Response
+**Response (200 OK):**
 ```json
 {
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "type": "Bearer",
-  "username": "john_doe",
-  "role": "USER"
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ..."
 }
 ```
+
+---
 
 ### Book Management Endpoints
 
-| Method | Endpoint | Description | Role |
-|--------|----------|-------------|------|
-| GET | `/api/books` | Get all books | USER, ADMIN |
-| GET | `/api/books/{id}` | Get book by ID | USER, ADMIN |
-| POST | `/api/books` | Add new book | ADMIN |
-| PUT | `/api/books/{id}` | Update book | ADMIN |
-| DELETE | `/api/books/{id}` | Delete book | ADMIN |
-| GET | `/api/books/search?query={q}` | Search books | USER, ADMIN |
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/books` | Add a new book | Yes (Bearer Token) |
 
 #### Example: Add Book Request
 ```json
-POST /api/books
+POST /books
 Authorization: Bearer <jwt_token>
+Content-Type: application/json
+
 {
-  "title": "Clean Code",
-  "author": "Robert C. Martin",
-  "isbn": "978-0132350884",
-  "totalCopies": 5,
-  "category": "Software Engineering",
-  "publishedYear": 2008
+  "title": "Ozymandious Latest Edison 2025 Part-3 Chapter-1",
+  "author": "Rohit Goyal",
+  "quantity": 1000
 }
 ```
 
-### Borrow Management Endpoints
+**Response (200 OK):**
+```json
+{
+  "id": "693fdb1652ce736c03d328c1",
+  "title": "Ozymandious Latest Edison 2025 Part-3 Chapter-1",
+  "author": "Rohit Goyal",
+  "quantity": 1000
+}
+```
 
-| Method | Endpoint | Description | Role |
-|--------|----------|-------------|------|
-| POST | `/api/borrows/borrow` | Borrow a book | USER, ADMIN |
-| POST | `/api/borrows/return/{id}` | Return a book | USER, ADMIN |
-| GET | `/api/borrows/my-borrows` | Get user's borrows | USER, ADMIN |
-| GET | `/api/borrows/all` | Get all borrows | ADMIN |
-| GET | `/api/borrows/overdue` | Get overdue books | ADMIN |
+---
+
+### Borrow & Return Endpoints
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/borrow/{bookId}` | Borrow a book | Yes (Bearer Token) |
+| POST | `/borrow/return/{borrowId}` | Return a borrowed book | Yes (Bearer Token) |
+| GET | `/borrow/my` | Get user's borrowed books | Yes (Bearer Token) |
 
 #### Example: Borrow Book Request
 ```json
-POST /api/borrows/borrow
-Authorization: Bearer <jwt_token>
+POST /borrow/693fdb1652ce736c03d328c1
+Authorization: Bearer JhyHcEVC6Exa9umbQc3RGfINJvtlQ4
+```
+
+**Response (200 OK):**
+```json
 {
-  "bookId": "507f1f77bcf86cd799439011",
-  "durationDays": 14
+  "id": "693fdb2525ce736c03d328c3",
+  "userId": "693fdb2752ce736c03d328c2",
+  "bookId": "693fdb1652ce736c03d328c1",
+  "borrowedAt": "2025-12-15T09:56:34.719",
+  "expiresAt": "2025-12-22T09:56:34.719",
+  "policyReturnAt": "2025-12-15T22:00:00.719",
+  "returned": false,
+  "returnedAt": null
 }
 ```
 
-### User Management Endpoints (ADMIN Only)
+#### Example: Return Book Request
+```json
+POST /borrow/return/693fdb2525ce736c03d328c3
+Authorization: Bearer JhyHcEVC6Exa9umbQc3RGfINJvtlQ4
+```
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/users` | Get all users |
-| GET | `/api/users/{id}` | Get user by ID |
-| PUT | `/api/users/{id}` | Update user |
-| DELETE | `/api/users/{id}` | Delete user |
+**Response (200 OK):**
+```json
+{
+  "id": "693fdb2525ce736c03d328c3",
+  "userId": "693fdb2752ce736c03d328c2",
+  "bookId": "693fdb1652ce736c03d328c1",
+  "borrowedAt": "2025-12-15T09:56:34.719",
+  "expiresAt": "2025-12-22T09:56:34.719",
+  "policyReturnAt": "2025-12-15T22:00:00.719",
+  "returned": true,
+  "returnedAt": "2025-12-15T09:57:46.530913577"
+}
+```
+
+#### Example: Get My Borrowed Books
+```json
+GET /borrow/my
+Authorization: Bearer JhyHcEVC6Exa9umbQc3RGfINJvtlQ4
+```
+
+**Response (200 OK):**
+```json
+[
+  {
+    "id": "693fdb2525ce736c03d328c3",
+    "userId": "693fdb2752ce736c03d328c2",
+    "bookId": "693fdb1652ce736c03d328c1",
+    "borrowedAt": "2025-12-15T09:56:34.719",
+    "expiresAt": "2025-12-22T09:56:34.719",
+    "policyReturnAt": "2025-12-15T22:00:00.719",
+    "returned": true,
+    "returnedAt": "2025-12-15T09:57:46.53"
+  }
+]
+```
 
 ---
 
@@ -558,6 +624,21 @@ java -jar build/libs/library-management-0.0.1-SNAPSHOT.jar --spring.profiles.act
 
 ---
 
+### Health Check Endpoint
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/actuator/health` | Check application health | No |
+
+**Response (200 OK):**
+```json
+{
+  "status": "UP"
+}
+```
+
+---
+
 ## 🐛 Troubleshooting
 
 ### Common Issues
@@ -602,14 +683,7 @@ server.port=8081
 
 ## 📚 API Documentation
 
-### Postman Collection
-Import the provided Postman collection for testing:
-```
-docs/Library-Management-API.postman_collection.json
-```
-
-### Swagger UI (Optional)
-If enabled, access at: `http://localhost:8080/swagger-ui.html`
+All endpoints have been tested and verified using Postman. The actual responses match the examples provided above.
 
 ---
 
